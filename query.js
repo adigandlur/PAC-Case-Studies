@@ -1,8 +1,6 @@
 // Serverless proxy so the Anthropic API key stays server-side.
 // The frontend posts { question, records } and gets back the raw Anthropic response.
-index.html
-netlify.toml
-netlify/functions/query.js
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return json(405, { error: 'Method Not Allowed' });
