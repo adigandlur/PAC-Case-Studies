@@ -67,12 +67,13 @@ async function main(){
     const ttl=metaOf(html,'og:title')||titleOf(html);
     const name=cleanCustomer(ttl,r.vendor||'');
     const {ind,uses}=classify(html.replace(/<[^>]+>/g,' ')+' '+desc);
-    const row={id:r.id};
-    if(desc) row.synopsis=desc.slice(0,600);
-    if(ind!=='Other') row.industry=ind;
-    if(uses.length) row.uses=uses;
-    if(name && name.split(' ').length<=4 && name.length>=2 && !/[.]/.test(name)) row.customer=name;
-    if(Object.keys(row).length>1) updates.push(row);
+    const keepName = (name && name.split(' ').length<=4 && name.length>=2 && !/[.]/.test(name));
+    const row={ id:r.id,
+      synopsis: desc ? desc.slice(0,600) : r.customer,
+      industry: (ind!=='Other') ? ind : 'Other',
+      uses: uses.length ? uses : [],
+      customer: keepName ? name : r.customer };
+    if(desc || ind!=='Other' || uses.length || keepName) updates.push(row);
   }, CONC);
   process.stdout.write('\n');
   console.log(`enriched: ${updates.length}`);
