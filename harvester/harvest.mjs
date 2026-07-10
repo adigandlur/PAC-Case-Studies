@@ -1,8 +1,9 @@
 const UA = 'Mozilla/5.0 (compatible; PAC-Harvester/1.0)';
-const CASE_PATH = /(case-stud|customer-stor|customer-success|success-stor|\/stories\/|\/customers?\/|\/clients?\/|\/references?\/|our-work)/i;
+const CASE_PATH = /(\/case-stud|\/customer-stor|\/customer-success|\/success-stor|\/customers\/|\/case-study\/)/i;
 const RELEVANT = /(customer|stor|resource|case|reference|client|success|work)/i;
-const MAX_SUBS = 60, MAX_URLS_PER_DOMAIN = 1200;
-const NOT_A_STORY = /^(customers?|customer-stories|case-studies|case-studies-landing|clients?|references?|resources?|stories|success-stories|index|en|us|uk|de|fr|es|it|ja|en-us)$/i;
+const MAX_SUBS = 60, MAX_URLS_PER_DOMAIN = 400;
+const NOT_A_STORY = /^(customers?|customer-stories|case-studies|case-studies-landing|clients?|references?|resources?|stories|success-stories|index|en|us|uk|de|fr|es|it|ja|en-us|category|categories|topics?|tags?|page|overview|all)$/i;
+const BAD_PATH = /(\/blog\/|\/docs?\/|\/support\/|\/product\/|\/products\/|\/solutions?\/|\/library\/|\/learn\/|\/events?\/|\/webinars?\/|\/news\/|\/press\/|\/about\/|\/training\/|\/community\/|\/developer|\/knowledge|\/download|\.pdf$)/i;
 
 function env(){
   const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = process.env;
@@ -58,7 +59,7 @@ async function storyUrls(domain){
     }
     if(out.length) break;
   }
-  return out.filter(u=>{ const seg=lastSeg(u); return seg && !NOT_A_STORY.test(seg) && seg.length>2; });
+  return out.filter(u=>{ if(BAD_PATH.test(u)) return false; const seg=lastSeg(u); return seg && !NOT_A_STORY.test(seg) && seg.length>2; });
 }
 
 async function insertRows(base,key,rows){
