@@ -2,11 +2,11 @@ const UA='Mozilla/5.0 (compatible; PAC-Enricher/1.0)';
 const CONC=10, TIMEOUT=20000;
 
 const INDUSTRIES=[
- ['Aerospace & Defense',['aerospace','defense','defence','aircraft','aviation','missile','satellite']],
- ['Apparel & Luxury Goods',['apparel','fashion','luxury','footwear','clothing','garment','sportswear']],
+ ['Aerospace & Defense',['aerospace','defense contractor','defence contractor','aircraft manufacturer','missile','satellite operator']],
+ ['Apparel & Luxury Goods',['apparel','fashion brand','luxury goods','footwear','clothing brand','sportswear brand']],
  ['Asset & Wealth Management',['asset management','wealth management','asset manager','investment management','fund manager']],
- ['Automotive',['automotive','vehicle manufacturer','automaker','auto parts','car maker','tire']],
- ['Construction & Engineering',['construction','engineering firm','infrastructure','contractor']],
+ ['Automotive',['automotive','automaker','auto parts','car manufacturer','vehicle manufacturer']],
+ ['Construction & Engineering',['construction company','engineering firm','civil engineering','general contractor']],
  ['Education & Non-Profit',['university','college','education','non-profit','nonprofit','charity','school','academic']],
  ['Financial Services',['financial services','fintech','payments','capital markets','brokerage']],
  ['Food & Beverage',['food','beverage','brewery','dairy','snack','restaurant','confectionery','winery']],
@@ -46,7 +46,7 @@ function metaOf(h,k){ const a=new RegExp('<meta[^>]+(?:property|name)=["\']'+k+'
 function titleOf(h){ const m=h.match(/<title[^>]*>([\s\S]*?)<\/title>/i); return m?decode(m[1]):''; }
 function firstPara(h){ const b=h.replace(/<(script|style|nav|header|footer)[\s\S]*?<\/\1>/gi,' '); for(const m of b.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)){ const t=decode(m[1].replace(/<[^>]+>/g,' ')); if(t.length>=90&&/[a-z]/.test(t)) return t; } return ''; }
 function cleanCustomer(raw,vendor){ if(!raw) return ''; let t=raw.split(/\s[|\u2013\u2014]\s|\s-\s/)[0].trim(); t=t.replace(new RegExp(vendor.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig'),' '); t=t.replace(/\b(case study|customer story|success story|customer success|customer testimonial|story|testimonial)\b/ig,' '); return t.replace(/\s+/g,' ').replace(/^[\s\-|:,]+|[\s\-|:,]+$/g,'').trim(); }
-function classify(text){ const t=' '+text.toLowerCase()+' '; let ind='Other'; for(const [n,kw] of INDUSTRIES){ if(kw.some(k=>t.includes(k))){ ind=n; break; } } if(ind==='Other') for(const [n,kw] of FALLBACK){ if(kw.some(k=>t.includes(k))){ ind=n; break; } } const uses=[]; for(const [n,kw] of USES) if(kw.some(k=>t.includes(k))) uses.push(n); return {ind,uses}; }
+function classify(text){ const t=' '+text.toLowerCase()+' '; let ind='Other', best=0; for(const [n,kw] of INDUSTRIES){ const hits=kw.reduce((a,k)=>a+(t.includes(k)?1:0),0); if(hits>best){ best=hits; ind=n; } } if(ind==='Other'){ for(const [n,kw] of FALLBACK){ const hits=kw.reduce((a,k)=>a+(t.includes(k)?1:0),0); if(hits>best){ best=hits; ind=n; } } } const uses=[]; for(const [n,kw] of USES) if(kw.some(k=>t.includes(k))) uses.push(n); return {ind,uses}; }
 
 function env(){ const {SUPABASE_URL,SUPABASE_SERVICE_KEY}=process.env; if(!SUPABASE_URL||!SUPABASE_SERVICE_KEY) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_KEY.'); return {base:SUPABASE_URL.replace(/\/$/,''),key:SUPABASE_SERVICE_KEY}; }
 async function rest(base,key,path){ const r=await fetch(base+'/rest/v1/'+path,{headers:{apikey:key,authorization:'Bearer '+key}}); if(!r.ok) throw new Error('REST '+r.status+' '+(await r.text())); return r.json(); }
@@ -58,7 +58,7 @@ async function upsert(base,key,rows){ for(let i=0;i<rows.length;i+=400){ const c
 
 async function main(){
   const {base,key}=env();
-  const recs=await pagedGet(base,key,`case_studies?select=id,vendor,customer,url&id=like.HRV-*&industry=eq.Other`);
+  const recs=await pagedGet(base,key,`case_studies?select=id,vendor,customer,url&id=like.HRV-*`);
   console.log(`records to enrich: ${recs.length}`);
   const updates=[];
   await pool(recs, async (r)=>{
