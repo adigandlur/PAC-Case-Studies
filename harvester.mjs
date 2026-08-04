@@ -21,7 +21,7 @@
 //   SUPABASE_URL          = https://xujokkplmsvsfoojycvl.supabase.co
 //   SUPABASE_SERVICE_KEY  = <service_role key — never the public key>
 //
-// Run:  SUPABASE_URL=... SUPABASE_SERVICE_KEY=... node harvest.mjs
+// Run:  SUPABASE_URL=... SUPABASE_SERVICE_KEY=... node harvester.mjs
 // Node 18+ (uses built-in fetch). No npm dependencies.
 // ============================================================================
 
