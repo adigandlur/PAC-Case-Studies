@@ -1,0 +1,48 @@
+# .github/workflows/harvest.yml
+#
+# Runs the selective harvester on a schedule. It looks at the vendor/partner
+# customer-story pages listed in harvest.mjs, finds NEW case studies, keeps only
+# the best few (verified links, EPM-relevant, detailed), and inserts them into
+# Supabase. Your app loads from Supabase, so new cases appear automatically.
+#
+# One-time setup:
+#   1. Put harvest.mjs in the repo (root, or adjust the path in the run step).
+#   2. Repo -> Settings -> Secrets and variables -> Actions -> New repository secret:
+#        SUPABASE_URL          = https://xujokkplmsvsfoojycvl.supabase.co
+#        SUPABASE_SERVICE_KEY  = <your service_role key>
+#   3. Commit this file to .github/workflows/harvest.yml
+#
+# You can also run it on demand from the Actions tab (workflow_dispatch).
+
+name: Harvest new case studies
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'      # every Monday 06:00 UTC
+  workflow_dispatch: {}       # manual "Run workflow" button
+
+permissions:
+  contents: read
+
+concurrency:
+  group: harvest
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run harvester
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node harvest.mjs
